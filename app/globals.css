@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Brand palette. Reskin a client by changing these values only.
+  - ink: charcoal/navy base, darkest (950) to lightest (600)
+  - accent: the single brand color, reserved for the primary action
+  - accent-ink: text color that sits on top of the accent
+*/
+@theme {
+  --color-ink-950: #070b12;
+  --color-ink-900: #0c131e;
+  --color-ink-800: #141d2b;
+  --color-ink-700: #222e40;
+  --color-ink-600: #3a475b;
+  --color-accent: #1fb5a3;
+  --color-accent-hover: #3ccbb9;
+  --color-accent-ink: #04201c;
+  /* Form validation errors. */
+  --color-danger: #f87171;
+
+  /* Reviews marquee: the track holds two copies of the list, so moving it
+     -50% loops seamlessly. */
+  --animate-marquee: marquee var(--marquee-duration, 60s) linear infinite;
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html {
+  /* Dark-only site: native controls, dropdowns and scrollbars render dark. */
+  color-scheme: dark;
+  /* Keep anchored sections clear of the sticky navbar. */
+  scroll-padding-top: 5rem;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ink-950);
+  color: #e6e9ef;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Stop browser autofill from painting inputs light. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  box-shadow: 0 0 0 1000px var(--color-ink-800) inset;
+  transition: background-color 9999s;
+}
+
+/* Smooth open/close for <details> accordions (FAQ). Progressive enhancement:
+   browsers without ::details-content support simply toggle instantly. */
+:root {
+  interpolate-size: allow-keywords;
+}
+details::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 300ms ease,
+    content-visibility 300ms allow-discrete;
+}
+details[open]::details-content {
+  height: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  details::details-content {
+    transition: none;
+  }
 }
