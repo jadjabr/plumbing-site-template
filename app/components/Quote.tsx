@@ -92,7 +92,7 @@ const focusRing =
 
 // text-base (16px) on inputs stops iOS Safari zooming in on focus.
 const controlBase =
-  "block w-full rounded-lg border bg-ink-800/60 text-base text-white placeholder:text-white/35 transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "block w-full rounded-lg border bg-ink-800/60 text-base text-white placeholder:text-white/55 transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
 const controlState = (invalid: boolean) =>
   invalid
     ? "border-danger/70 hover:border-danger"
@@ -415,7 +415,7 @@ export default function Quote() {
                 <div className="relative mt-2">
                   <select
                     {...control("service")}
-                    className={`h-12 appearance-none pl-4 pr-11 ${controlBase} ${controlState(!!visibleError("service"))} ${values.service ? "" : "text-white/35"} [&>option]:bg-ink-800 [&>option]:text-white`}
+                    className={`h-12 appearance-none pl-4 pr-11 ${controlBase} ${controlState(!!visibleError("service"))} ${values.service ? "" : "text-white/55"} [&>option]:bg-ink-800 [&>option]:text-white`}
                   >
                     <option value="" disabled>
                       Choose a service…
@@ -447,7 +447,7 @@ export default function Quote() {
                     </span>
                   </label>
                   <span
-                    className={`text-xs tabular-nums ${values.message.length > MESSAGE_MAX ? "text-danger" : "text-white/40"}`}
+                    className={`text-xs tabular-nums ${values.message.length > MESSAGE_MAX ? "text-danger" : "text-white/55"}`}
                   >
                     {values.message.length}/{MESSAGE_MAX}
                   </span>

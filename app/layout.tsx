@@ -34,14 +34,7 @@ export const metadata: Metadata = {
     description,
     url: "/",
     siteName: site.name,
-    images: [
-      {
-        url: site.heroImage,
-        width: 2400,
-        height: 1500,
-        alt: `${site.name}, 24/7 plumbing across Greater Edmonton`,
-      },
-    ],
+    // og:image comes from app/opengraph-image.tsx (generated 1200×630 card).
     locale: "en_CA",
     type: "website",
   },

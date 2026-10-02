@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import { site } from "../lib/site";
 import { PauseIcon, PlayIcon, StarIcon } from "./icons";
 
@@ -73,12 +73,19 @@ function Stars({ className = "size-4" }: { className?: string }) {
   );
 }
 
-function ReviewList({ hidden = false }: { hidden?: boolean }) {
+function ReviewList({
+  hidden = false,
+  ref,
+}: {
+  hidden?: boolean;
+  ref?: Ref<HTMLUListElement>;
+}) {
   return (
     // pr-4 matches gap-4 so both copies are exactly the same width and the
-    // -50% loop has no visible seam. The duplicate is hidden from assistive
-    // tech, and dropped entirely when the marquee is replaced by manual scroll.
+    // loop has no visible seam. The duplicate is hidden from assistive tech,
+    // and dropped entirely with reduced motion (no auto-scroll, no loop).
     <ul
+      ref={ref}
       aria-hidden={hidden || undefined}
       className={`flex shrink-0 gap-4 pr-4 ${hidden ? "motion-reduce:hidden" : ""}`}
     >
@@ -103,10 +110,101 @@ function ReviewList({ hidden = false }: { hidden?: boolean }) {
   );
 }
 
+// Auto-scroll speed and how long to wait after a swipe/scroll before resuming.
+const SPEED_PX_PER_S = 40;
+const RESUME_AFTER_MS = 4000;
+
 export default function Reviews() {
-  // Explicit pause control for keyboard/touch users and WCAG 2.2.2;
-  // mouse users also get pause-on-hover.
+  // Explicit pause control for keyboard/touch users and WCAG 2.2.2. Hover,
+  // keyboard focus and touch also pause it temporarily.
   const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(paused);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const loopRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
+  // A real scroll container (so touch users can swipe both ways) that a rAF
+  // loop nudges forward. Two copies of the list let it wrap seamlessly.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    const loop = loopRef.current;
+    if (!el || !loop) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let hovering = false;
+    let focused = false;
+    let touching = false;
+    let visible = false;
+    let resumeAt = 0;
+    let pos = el.scrollLeft;
+    let lastSet = el.scrollLeft;
+    let lastT = 0;
+    let raf = 0;
+
+    const tick = (t: number) => {
+      const dt = lastT ? Math.min(t - lastT, 64) : 0;
+      lastT = t;
+      // Anything we didn't set ourselves is the user scrolling: follow it
+      // and hold off auto-scroll for a moment.
+      if (el.scrollLeft !== lastSet) {
+        pos = el.scrollLeft;
+        resumeAt = t + RESUME_AFTER_MS;
+      }
+      const running =
+        visible && !pausedRef.current && !hovering && !focused && !touching;
+      if (running && t >= resumeAt) {
+        pos += (SPEED_PX_PER_S * dt) / 1000;
+        if (pos >= loop.offsetWidth) pos -= loop.offsetWidth;
+        el.scrollLeft = pos;
+      }
+      lastSet = el.scrollLeft;
+      raf = requestAnimationFrame(tick);
+    };
+
+    // User scrolls past either end jump by one copy, so it never runs out.
+    const onScroll = () => {
+      if (el.scrollLeft === lastSet) return;
+      const w = loop.offsetWidth;
+      if (el.scrollLeft >= w) el.scrollLeft -= w;
+      else if (el.scrollLeft < 1) el.scrollLeft += w;
+    };
+
+    const on = <K extends keyof HTMLElementEventMap>(
+      type: K,
+      fn: (e: HTMLElementEventMap[K]) => void,
+    ) => {
+      el.addEventListener(type, fn, { passive: true });
+      return () => el.removeEventListener(type, fn);
+    };
+    const offs = [
+      on("scroll", onScroll),
+      on("pointerenter", (e) => {
+        if (e.pointerType === "mouse") hovering = true;
+      }),
+      on("pointerleave", () => (hovering = false)),
+      on("focusin", () => (focused = true)),
+      on("focusout", () => (focused = false)),
+      on("touchstart", () => (touching = true)),
+      on("touchend", () => {
+        touching = false;
+        resumeAt = performance.now() + RESUME_AFTER_MS;
+      }),
+    ];
+    const io = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+    });
+    io.observe(el);
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+      offs.forEach((off) => off());
+    };
+  }, []);
 
   return (
     <section
@@ -144,30 +242,38 @@ export default function Reviews() {
         </div>
       </div>
 
-      {/* Marquee. Full-bleed with faded edges; pauses on hover (mouse), on tap
-          (touch; Tailwind's hover: doesn't fire there), or via the button
-          below. With reduced motion it becomes a swipeable snap-scrolling row. */}
-      <div
-        onPointerUp={(e) => {
-          if (e.pointerType === "touch") setPaused((p) => !p);
-        }}
-        className="group mt-12 [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)] motion-reduce:overflow-x-auto motion-reduce:snap-x motion-reduce:snap-mandatory motion-reduce:px-4 motion-reduce:[mask-image:none] sm:mt-14"
-      >
+      {/* Auto-scrolling row: swipe/scroll it freely, it pauses on hover, focus
+          or touch and resumes after a few seconds. With reduced motion it's a
+          plain snap-scrolling row. Edge fades are overlays (not a mask) so the
+          focus ring isn't clipped. */}
+      <div className="relative mt-12 sm:mt-14">
         <div
-          className="flex w-max items-stretch py-1 animate-marquee [--marquee-duration:70s] group-hover:[animation-play-state:paused] motion-reduce:animate-none"
-          // Inline so it isn't overridden by the animate-marquee shorthand.
-          style={paused ? { animationPlayState: "paused" } : undefined}
+          ref={scrollerRef}
+          role="region"
+          aria-label="Customer reviews"
+          tabIndex={0}
+          className={`overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none] motion-reduce:snap-x motion-reduce:snap-mandatory motion-reduce:scroll-px-4 motion-reduce:px-4 [&::-webkit-scrollbar]:hidden ${focusRing} focus-visible:outline-offset-[-2px]`}
         >
-          <ReviewList />
-          <ReviewList hidden />
+          <div className="flex w-max items-stretch">
+            <ReviewList ref={loopRef} />
+            <ReviewList hidden />
+          </div>
         </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-linear-to-r from-[color-mix(in_srgb,var(--color-ink-900)_40%,var(--color-ink-950))] to-transparent sm:w-16 motion-reduce:hidden"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-[color-mix(in_srgb,var(--color-ink-900)_40%,var(--color-ink-950))] to-transparent sm:w-16 motion-reduce:hidden"
+        />
       </div>
 
       <div className="mx-auto flex max-w-7xl justify-end px-4 pt-6 pb-20 sm:px-6 sm:pb-28 lg:px-8">
         <button
           type="button"
           onClick={() => setPaused((p) => !p)}
-          className={`inline-flex h-10 items-center gap-2 rounded-lg border border-ink-600 bg-ink-800/60 px-4 text-sm font-semibold text-white/80 transition-colors hover:border-white/40 hover:bg-ink-700 hover:text-white motion-reduce:hidden ${focusRing}`}
+          className={`inline-flex h-11 items-center gap-2 rounded-lg border border-ink-600 bg-ink-800/60 px-4 text-sm font-semibold text-white/80 transition-colors hover:border-white/40 hover:bg-ink-700 hover:text-white motion-reduce:hidden ${focusRing}`}
         >
           {paused ? (
             <PlayIcon className="size-4 shrink-0 text-accent" />

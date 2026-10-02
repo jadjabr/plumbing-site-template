@@ -46,7 +46,7 @@ export default function Footer() {
         <div className="lg:col-span-5">
           <a
             href="#top"
-            className={`inline-flex items-center gap-2.5 rounded-md ${focusRing}`}
+            className={`inline-flex min-h-11 items-center gap-2.5 rounded-md ${focusRing}`}
           >
             <span
               aria-hidden="true"
@@ -87,7 +87,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${site.name} on ${label} (opens in a new tab)`}
-                  className={`grid size-10 place-items-center rounded-lg bg-ink-800 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-ink-700 hover:text-accent ${focusRing}`}
+                  className={`grid size-11 place-items-center rounded-lg bg-ink-800 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-ink-700 hover:text-accent ${focusRing}`}
                 >
                   <SocialIcon className="size-5" />
                 </a>
@@ -101,12 +101,12 @@ export default function Footer() {
           <h3 id="footer-links-heading" className={columnHeading}>
             Quick Links
           </h3>
-          <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 lg:grid-cols-1">
+          <ul className="mt-4 grid grid-cols-2 gap-x-6 lg:grid-cols-1 lg:gap-y-1">
             {quickLinks.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className={`inline-block rounded-md py-1.5 text-sm text-white/60 transition-colors hover:text-white ${focusRing}`}
+                  className={`inline-block rounded-md py-3 text-sm text-white/60 lg:py-1.5 transition-colors hover:text-white ${focusRing}`}
                 >
                   {link.label}
                 </a>
@@ -135,7 +135,9 @@ export default function Footer() {
             </a>
             <a
               href={`mailto:${site.email}`}
-              className={`group flex items-start gap-3 rounded-md ${focusRing}`}
+              // Padding grows the tap target to 44px; negative margin keeps
+              // the visual spacing unchanged.
+              className={`group -my-3 flex items-start gap-3 rounded-md py-3 ${focusRing}`}
             >
               <MailIcon className="mt-0.5 size-4 shrink-0 text-accent" />
               <span className="min-w-0 break-words text-sm text-white/70 transition-colors group-hover:text-white">

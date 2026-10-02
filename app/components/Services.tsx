@@ -18,12 +18,14 @@ function ServiceCard({ service }: { service: Service }) {
           <ServiceIcon className="size-6" />
         </span>
         <div className="flex-1">
-          <h3 className="flex flex-wrap items-center gap-x-3 gap-y-1 text-lg font-semibold text-white">
-            {name}
+          {/* Tag sits beside the heading, not inside it, so the heading's
+              accessible name is just the service. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h3 className="text-lg font-semibold text-white">{name}</h3>
             <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent">
-              24/7
+              Available 24/7
             </span>
-          </h3>
+          </div>
           <p className="mt-1.5 text-sm leading-relaxed text-white/70 sm:text-base">
             {description}
           </p>

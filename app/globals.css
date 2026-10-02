@@ -17,15 +17,6 @@
   --color-accent-ink: #04201c;
   /* Form validation errors. */
   --color-danger: #f87171;
-
-  /* Reviews marquee: the track holds two copies of the list, so moving it
-     -50% loops seamlessly. */
-  --animate-marquee: marquee var(--marquee-duration, 60s) linear infinite;
-  @keyframes marquee {
-    to {
-      transform: translateX(-50%);
-    }
-  }
 }
 
 @theme inline {

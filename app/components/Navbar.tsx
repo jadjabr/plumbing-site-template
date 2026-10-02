@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { site } from "../lib/site";
 import { MessageIcon, PhoneIcon } from "./icons";
 
@@ -36,6 +36,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuId = useId();
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -48,7 +49,13 @@ export default function Navbar() {
   // where the full nav is shown.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      // Focus may be on a menu link that's about to be hidden; return it to
+      // the toggle so keyboard users don't lose their place.
+      toggleRef.current?.focus();
+    };
     const wide = window.matchMedia("(min-width: 80rem)");
     const onWide = () => wide.matches && setOpen(false);
     window.addEventListener("keydown", onKey);
@@ -74,7 +81,7 @@ export default function Navbar() {
         <a
           href="#top"
           onClick={close}
-          className={`flex min-w-0 shrink items-center gap-2.5 rounded-md ${focusRing}`}
+          className={`flex min-h-11 min-w-0 shrink items-center gap-2.5 rounded-md ${focusRing}`}
         >
           <span
             aria-hidden="true"
@@ -114,7 +121,7 @@ export default function Navbar() {
           {/* Call is always visible, including when the menu is collapsed. */}
           <a
             href={site.phone.href}
-            className={`${outlineButton} inline-flex h-10 px-3 text-sm sm:px-4`}
+            className={`${outlineButton} inline-flex h-11 px-3 text-sm sm:px-4`}
             aria-label={`Call ${site.phone.display}`}
           >
             <PhoneIcon className="size-4 shrink-0 text-accent" />
@@ -125,7 +132,7 @@ export default function Navbar() {
 
           <a
             href={site.sms.href}
-            className={`${outlineButton} hidden h-10 px-4 text-sm md:inline-flex`}
+            className={`${outlineButton} hidden h-11 px-4 text-sm md:inline-flex`}
           >
             <MessageIcon className="size-4 shrink-0 text-accent" />
             Text Us
@@ -133,18 +140,19 @@ export default function Navbar() {
 
           <a
             href={site.quoteHref}
-            className={`${quoteButton} hidden h-10 px-5 text-sm md:inline-flex`}
+            className={`${quoteButton} hidden h-11 px-5 text-sm md:inline-flex`}
           >
             Get a Quote
           </a>
 
           <button
+            ref={toggleRef}
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls={menuId}
             aria-label={open ? "Close menu" : "Open menu"}
-            className={`grid size-10 place-items-center rounded-lg text-white/80 transition-colors hover:bg-ink-800 hover:text-white xl:hidden ${focusRing}`}
+            className={`grid size-11 place-items-center rounded-lg text-white/80 transition-colors hover:bg-ink-800 hover:text-white xl:hidden ${focusRing}`}
           >
             <MenuIcon open={open} />
           </button>
